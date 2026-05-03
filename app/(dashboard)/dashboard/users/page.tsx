@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import useSWR from "swr"
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Power, ChevronLeft, ChevronRight, Mail } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Power, ChevronLeft, ChevronRight, Mail, Shield } from "lucide-react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/components/providers/auth-provider"
@@ -66,7 +66,7 @@ interface UsersResponse {
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function UsersPage() {
-  const { hasPermission, isRoot } = useAuth()
+  const { hasPermission, isRoot, isLoading: isAuthLoading } = useAuth()
   const { 
     state, 
     onPageChange, 
@@ -81,6 +81,18 @@ export default function UsersPage() {
   const [toggleStatus, setToggleStatus] = React.useState<"activated" | "deactivated">("activated")
   const [isUserDialogOpen, setIsUserDialogOpen] = React.useState(false)
   const [editingUser, setEditingUser] = React.useState<SafeUser | null>(null)
+
+  if (!isAuthLoading && !isRoot) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] space-y-4 text-center">
+        <Shield className="h-16 w-16 text-destructive opacity-20" />
+        <h1 className="text-2xl font-bold">Accès refusé</h1>
+        <p className="text-muted-foreground max-w-md">
+          Seul le super administrateur (Root) est autorisé à accéder aux outils de gestion de l'administration.
+        </p>
+      </div>
+    )
+  }
 
   // Build query string for API
   const queryParams = new URLSearchParams({

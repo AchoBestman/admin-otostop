@@ -2,12 +2,13 @@
 
 import * as React from "react"
 import useSWR from "swr"
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Key, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Key, ChevronLeft, ChevronRight, Shield } from "lucide-react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/components/providers/auth-provider"
 import { useDataTable } from "@/lib/hooks/use-data-table"
 import { DateRangePicker } from "@/components/date-range-picker"
+import { RoleDialog } from "@/components/roles/role-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -39,7 +40,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search, MoreHorizontal, Pencil, Key, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { toast } from "sonner"
 import type { RoleWithPermissions } from "@/types"
 
 interface RolesResponse {
@@ -56,7 +58,7 @@ interface RolesResponse {
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function RolesPage() {
-  const { isRoot } = useAuth()
+  const { isRoot, isLoading: isAuthLoading } = useAuth()
   const { 
     state, 
     onPageChange, 
@@ -66,6 +68,20 @@ export default function RolesPage() {
   } = useDataTable("name", "asc")
 
   const [deleteRoleId, setDeleteRoleId] = React.useState<number | null>(null)
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = React.useState(false)
+  const [editingRole, setEditingRole] = React.useState<RoleWithPermissions | null>(null)
+
+  if (!isAuthLoading && !isRoot) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] space-y-4 text-center">
+        <Shield className="h-16 w-16 text-destructive opacity-20" />
+        <h1 className="text-2xl font-bold">Accès refusé</h1>
+        <p className="text-muted-foreground max-w-md">
+          Seul le super administrateur (Root) est autorisé à accéder aux outils de gestion de l'administration.
+        </p>
+      </div>
+    )
+  }
 
   // Build query string for API
   const queryParams = new URLSearchParams({
@@ -112,6 +128,16 @@ export default function RolesPage() {
     }
   }
 
+  const openCreateDialog = () => {
+    setEditingRole(null)
+    setIsRoleDialogOpen(true)
+  }
+
+  const openEditDialog = (role: RoleWithPermissions) => {
+    setEditingRole(role)
+    setIsRoleDialogOpen(true)
+  }
+
   const roles = data?.data || []
   const pagination = data?.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 }
 
@@ -126,10 +152,12 @@ export default function RolesPage() {
             Gérez les rôles et permissions de la plateforme
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" />
-          Ajouter
-        </Button>
+        {isRoot && (
+          <Button onClick={openCreateDialog} className="bg-primary hover:bg-primary/90">
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -244,11 +272,11 @@ export default function RolesPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(role)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Modifier
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(role)}>
                                 <Key className="mr-2 h-4 w-4" />
                                 Gérer les permissions
                               </DropdownMenuItem>
@@ -324,6 +352,13 @@ export default function RolesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <RoleDialog 
+        open={isRoleDialogOpen}
+        onOpenChange={setIsRoleDialogOpen}
+        role={editingRole}
+        onSuccess={() => mutate()}
+      />
     </div>
   )
 }

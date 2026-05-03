@@ -14,9 +14,9 @@ import type { JWTPayload, User } from "@/types";
 // GET users list with pagination and filtering
 export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayload) => {
   try {
-    // Check if user has permission to view users
-    if (!isAdmin(auth)) {
-      return forbidden("You do not have permission to view users");
+    // Check if user is root
+    if (!isRoot(auth)) {
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     // Use unified query parser
@@ -68,7 +68,7 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
   try {
     // Only root can create users from the dashboard
     if (!isRoot(auth)) {
-      return forbidden("Only root users can create accounts from the dashboard");
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     const body = await request.json();

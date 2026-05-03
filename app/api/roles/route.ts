@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
-import { withAuth, isAdmin } from "@/lib/auth/middleware";
+import { withAuth, isAdmin, isRoot } from "@/lib/auth/middleware";
 import { roleModel, logModel } from "@/lib/db/models";
 import { createRoleSchema } from "@/lib/validators/role";
 import { parseQueryParams, buildPrismaWhere } from "@/lib/utils/query";
@@ -10,8 +10,8 @@ import type { JWTPayload, Role } from "@/types";
 // GET roles list
 export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayload) => {
   try {
-    if (!isAdmin(auth)) {
-      return forbidden("You do not have permission to view roles");
+    if (!isRoot(auth)) {
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     // Use unified query parser
@@ -52,8 +52,8 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
 // POST create new role
 export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPayload) => {
   try {
-    if (!isAdmin(auth)) {
-      return forbidden("You do not have permission to create roles");
+    if (!isRoot(auth)) {
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     const body = await request.json();
@@ -78,11 +78,16 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
       slug: data.slug,
     } as Partial<Role>, auth.userId);
 
+    // Assign permissions if provided
+    if (data.permission_ids && data.permission_ids.length > 0) {
+      await roleModel.assignPermissions(roleId, data.permission_ids);
+    }
+
     // Log the action
     await logModel.log("create", "roles", roleId, auth.userId, "Role created");
 
     const role = await roleModel.findWithPermissions(roleId);
-    return success(role, "Role created successfully");
+    return success(role, "Rôle créé avec succès");
 
   } catch (error: unknown) {
     console.error("Create role error:", error);

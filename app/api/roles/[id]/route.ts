@@ -11,8 +11,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 // GET single role with permissions
 export const GET = withAuth(async (_request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
-    if (!isAdmin(auth)) {
-      return forbidden("You do not have permission to view roles");
+    if (!isRoot(auth)) {
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     const params = await context.params;
@@ -34,8 +34,8 @@ export const GET = withAuth(async (_request: NextRequest, context: RouteContext,
 // PATCH update role
 export const PATCH = withAuth(async (request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
-    if (!isAdmin(auth)) {
-      return forbidden("You do not have permission to update roles");
+    if (!isRoot(auth)) {
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     const params = await context.params;
@@ -77,11 +77,16 @@ export const PATCH = withAuth(async (request: NextRequest, context: RouteContext
 
     await roleModel.update(roleId, updateData, auth.userId);
 
+    // Update permissions if provided
+    if (data.permission_ids) {
+      await roleModel.assignPermissions(roleId, data.permission_ids);
+    }
+
     // Log the action
     await logModel.log("update", "roles", roleId, auth.userId, "Role updated");
 
     const role = await roleModel.findWithPermissions(roleId);
-    return success(role, "Role updated successfully");
+    return success(role, "Rôle mis à jour avec succès");
 
   } catch (error: unknown) {
     console.error("Update role error:", error);
@@ -93,7 +98,7 @@ export const PATCH = withAuth(async (request: NextRequest, context: RouteContext
 export const DELETE = withAuth(async (_request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
     if (!isRoot(auth)) {
-      return forbidden("Only root users can delete roles");
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     const params = await context.params;

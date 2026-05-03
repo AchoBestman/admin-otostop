@@ -12,8 +12,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 // GET single user with roles
 export const GET = withAuth(async (_request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
-    if (!isAdmin(auth)) {
-      return forbidden("You do not have permission to view users");
+    if (!isRoot(auth)) {
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     const params = await context.params;
@@ -35,8 +35,8 @@ export const GET = withAuth(async (_request: NextRequest, context: RouteContext,
 // PATCH update user
 export const PATCH = withAuth(async (request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
-    if (!isAdmin(auth)) {
-      return forbidden("You do not have permission to update users");
+    if (!isRoot(auth)) {
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     const params = await context.params;
@@ -61,7 +61,7 @@ export const PATCH = withAuth(async (request: NextRequest, context: RouteContext
     // Check if trying to modify root user without being root
     const isTargetRoot = await userModel.hasRole(userId, "root");
     if (isTargetRoot && !isRoot(auth)) {
-      return forbidden("Only root users can modify other root users");
+      return forbidden("Seul le super admin peut modifier un compte root");
     }
 
     // Check email uniqueness if changing email
@@ -113,9 +113,9 @@ export const PATCH = withAuth(async (request: NextRequest, context: RouteContext
 export const DELETE = withAuth(async (_request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
     // Check permission
-    const hasPermission = auth.permissions.includes("can_delete_user") || isRoot(auth);
+    const hasPermission = isRoot(auth);
     if (!hasPermission) {
-      return forbidden("You do not have permission to delete users");
+      return forbidden("Seul le super admin peut gérer l'administration");
     }
 
     const params = await context.params;
