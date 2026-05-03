@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp"
 
-export default function VerifyOTPPage() {
+function VerifyOTPContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { verifyOTP, login } = useAuth()
@@ -197,5 +197,18 @@ export default function VerifyOTPPage() {
         </p>
       </CardContent>
     </Card>
+  )
+}
+
+export default function VerifyOTPPage() {
+  return (
+    <React.Suspense fallback={
+      <Card className="w-full max-w-md border-border/50 shadow-xl p-8 flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Chargement...</p>
+      </Card>
+    }>
+      <VerifyOTPContent />
+    </React.Suspense>
   )
 }
