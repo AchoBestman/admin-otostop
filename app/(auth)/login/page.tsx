@@ -172,12 +172,7 @@ function LoginContent() {
           </form>
         </Form>
 
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          {"Pas encore de compte ? "}
-          <Link href="/register" className="text-primary hover:underline font-medium">
-            {"S'inscrire"}
-          </Link>
-        </div>
+        {/* Registration is restricted to admin dashboard */}
       </CardContent>
     </Card>
   )

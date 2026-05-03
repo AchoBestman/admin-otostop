@@ -1,9 +1,12 @@
 export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-import { withAuth, isAdmin } from "@/lib/auth/middleware";
+import { withAuth, isRoot, isAdmin } from "@/lib/auth/middleware";
 import { userModel, logModel, roleModel } from "@/lib/db/models";
 import { createUserSchema } from "@/lib/validators/user";
+import { generateResetToken } from "@/lib/auth/jwt";
+import { sendMail } from "@/lib/mail/transporter";
+import { passwordResetTemplate } from "@/lib/mail/templates";
 import { paginated, success, error, validationError, forbidden } from "@/lib/utils/response";
 import type { JWTPayload, User } from "@/types";
 
@@ -61,9 +64,9 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
 // POST create new user
 export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPayload) => {
   try {
-    // Check if user has permission to create users
-    if (!isAdmin(auth)) {
-      return forbidden("You do not have permission to create users");
+    // Only root can create users from the dashboard
+    if (!isRoot(auth)) {
+      return forbidden("Only root users can create accounts from the dashboard");
     }
 
     const body = await request.json();
@@ -83,8 +86,10 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
       return error("An account with this email already exists", 409);
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(data.password, 12);
+    // Handle password: if not provided, generate a random one
+    // In both cases, we will send a password reset email as per user request
+    const password = data.password || Math.random().toString(36).slice(-16);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
     const userId = await userModel.create({
@@ -111,7 +116,19 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
     }
 
     // Log the action
-    await logModel.log("create", "users", userId, auth.userId, "User created by admin");
+    await logModel.log("create", "users", userId, auth.userId, "User created by root");
+
+    // Generate reset token and send email
+    const resetToken = generateResetToken(data.email);
+    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
+
+    await sendMail({
+      type: "noreply",
+      to: data.email,
+      subject: "Initialisation de votre compte - OtoStop Global+",
+      html: passwordResetTemplate(data.first_name, resetLink),
+    });
 
     // Get created user with roles
     const user = await userModel.findWithRoles(userId);
@@ -119,7 +136,7 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
       return error("Failed to create user", 500);
     }
 
-    return success(user, "User created successfully");
+    return success(user, "User created successfully. A password reset email has been sent.");
 
   } catch (error: unknown) {
     console.error("Create user error:", error);
