@@ -14,9 +14,9 @@ import type { JWTPayload, User } from "@/types";
 // GET users list with pagination and filtering
 export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayload) => {
   try {
-    // Check if user is root
-    if (!isRoot(auth)) {
-      return forbidden("Seul le super admin peut gérer l'administration");
+    // Check if user is admin or root
+    if (!isAdmin(auth)) {
+      return forbidden("Seul l'administration peut consulter cette liste");
     }
 
     // Use unified query parser

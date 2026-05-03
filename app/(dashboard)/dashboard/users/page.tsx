@@ -65,7 +65,7 @@ interface UsersResponse {
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function UsersPage() {
-  const { hasPermission, isRoot, isLoading: isAuthLoading } = useAuth()
+  const { hasPermission, isAdmin, isRoot, isLoading: isAuthLoading } = useAuth()
   const { 
     state, 
     onPageChange, 
@@ -81,13 +81,13 @@ export default function UsersPage() {
   const [isUserDialogOpen, setIsUserDialogOpen] = React.useState(false)
   const [editingUser, setEditingUser] = React.useState<SafeUser | null>(null)
 
-  if (!isAuthLoading && !isRoot) {
+  if (!isAuthLoading && !isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] space-y-4 text-center">
         <Shield className="h-16 w-16 text-destructive opacity-20" />
         <h1 className="text-2xl font-bold">Accès refusé</h1>
         <p className="text-muted-foreground max-w-md">
-          Seul le super administrateur (Root) est autorisé à accéder aux outils de gestion de l'administration.
+          Seuls les administrateurs sont autorisés à accéder à cette section.
         </p>
       </div>
     )
@@ -205,7 +205,7 @@ export default function UsersPage() {
             Gérez les utilisateurs de la plateforme
           </p>
         </div>
-        {(isRoot || hasPermission("can_create_user")) && (
+        {isRoot && (
           <Button onClick={openCreateDialog} className="bg-primary hover:bg-primary/90">
             <Plus className="mr-2 h-4 w-4" />
             Ajouter
@@ -344,17 +344,19 @@ export default function UsersPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Modifier
-                              </DropdownMenuItem>
+                              {isRoot && (
+                                <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Modifier
+                                </DropdownMenuItem>
+                              )}
                               {isRoot && (
                                 <DropdownMenuItem onClick={() => handleResendEmail(user.id)}>
                                   <Mail className="mr-2 h-4 w-4" />
                                   Renvoyer l'email
                                 </DropdownMenuItem>
                               )}
-                              {canToggleStatus && (
+                              {isRoot && canToggleStatus && (
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setToggleUserId(user.id)
@@ -365,7 +367,7 @@ export default function UsersPage() {
                                   {user.status === "activated" ? "Désactiver" : "Activer"}
                                 </DropdownMenuItem>
                               )}
-                              {(canDeleteUser || isRoot) && (
+                              {isRoot && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem

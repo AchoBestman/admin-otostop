@@ -56,7 +56,7 @@ interface RolesResponse {
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function RolesPage() {
-  const { isRoot, isLoading: isAuthLoading } = useAuth()
+  const { isAdmin, isRoot, isLoading: isAuthLoading } = useAuth()
   const { 
     state, 
     onPageChange, 
@@ -69,13 +69,13 @@ export default function RolesPage() {
   const [isRoleDialogOpen, setIsRoleDialogOpen] = React.useState(false)
   const [editingRole, setEditingRole] = React.useState<RoleWithPermissions | null>(null)
 
-  if (!isAuthLoading && !isRoot) {
+  if (!isAuthLoading && !isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] space-y-4 text-center">
         <Shield className="h-16 w-16 text-destructive opacity-20" />
         <h1 className="text-2xl font-bold">Accès refusé</h1>
         <p className="text-muted-foreground max-w-md">
-          Seul le super administrateur (Root) est autorisé à accéder aux outils de gestion de l'administration.
+          Seuls les administrateurs sont autorisés à accéder à cette section.
         </p>
       </div>
     )
@@ -270,14 +270,18 @@ export default function RolesPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => openEditDialog(role)}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Modifier
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openEditDialog(role)}>
-                                <Key className="mr-2 h-4 w-4" />
-                                Gérer les permissions
-                              </DropdownMenuItem>
+                              {isRoot && (
+                                <>
+                                  <DropdownMenuItem onClick={() => openEditDialog(role)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Modifier
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openEditDialog(role)}>
+                                    <Key className="mr-2 h-4 w-4" />
+                                    Gérer les permissions
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                               {isRoot && !systemRoles.includes(role.slug) && (
                                 <>
                                   <DropdownMenuSeparator />

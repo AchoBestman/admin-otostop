@@ -12,8 +12,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 // GET single user with roles
 export const GET = withAuth(async (_request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
-    if (!isRoot(auth)) {
-      return forbidden("Seul le super admin peut gérer l'administration");
+    if (!isAdmin(auth)) {
+      return forbidden("Seul l'administration peut consulter les détails");
     }
 
     const params = await context.params;

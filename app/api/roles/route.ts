@@ -10,8 +10,8 @@ import type { JWTPayload, Role } from "@/types";
 // GET roles list
 export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayload) => {
   try {
-    if (!isRoot(auth)) {
-      return forbidden("Seul le super admin peut gérer l'administration");
+    if (!isAdmin(auth)) {
+      return forbidden("Seul l'administration peut consulter cette liste");
     }
 
     // Use unified query parser
