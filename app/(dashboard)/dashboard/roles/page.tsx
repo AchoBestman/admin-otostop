@@ -6,6 +6,8 @@ import { Plus, Search, MoreHorizontal, Pencil, Trash2, Key, ChevronLeft, Chevron
 import { toast } from "sonner"
 
 import { useAuth } from "@/components/providers/auth-provider"
+import { useDataTable } from "@/lib/hooks/use-data-table"
+import { DateRangePicker } from "@/components/date-range-picker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -37,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import type { RoleWithPermissions } from "@/types"
 
 interface RolesResponse {
@@ -54,22 +57,40 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function RolesPage() {
   const { isRoot } = useAuth()
-  const [search, setSearch] = React.useState("")
-  const [page, setPage] = React.useState(1)
-  const [limit] = React.useState(10)
+  const { 
+    state, 
+    onPageChange, 
+    onSortChange, 
+    onSearch, 
+    onDateRangeChange 
+  } = useDataTable("name", "asc")
+
   const [deleteRoleId, setDeleteRoleId] = React.useState<number | null>(null)
 
-  // Build query string
+  // Build query string for API
   const queryParams = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
+    page: state.page.toString(),
+    limit: state.limit.toString(),
+    sort: state.sort,
+    order: state.order,
   })
-  if (search) queryParams.set("search", search)
+  if (state.search) queryParams.set("search", state.search)
+  if (state.from) queryParams.set("from", state.from)
+  if (state.to) queryParams.set("to", state.to)
 
   const { data, error, isLoading, mutate } = useSWR<RolesResponse>(
     `/api/roles?${queryParams.toString()}`,
     fetcher
   )
+
+  const handleSort = (field: string) => {
+    onSortChange(field)
+  }
+
+  const renderSortIcon = (field: string) => {
+    if (state.sort !== field) return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+    return state.order === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+  }
 
   const handleDelete = async () => {
     if (!deleteRoleId) return
@@ -79,7 +100,7 @@ export default function RolesPage() {
       const result = await res.json()
 
       if (res.ok) {
-        toast.success("Role supprime")
+        toast.success("Rôle supprimé")
         mutate()
       } else {
         toast.error("Erreur", { description: result.message })
@@ -100,9 +121,9 @@ export default function RolesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Roles</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Rôles</h1>
           <p className="text-muted-foreground">
-            Gerez les roles et permissions de la plateforme
+            Gérez les rôles et permissions de la plateforme
           </p>
         </div>
         <Button className="bg-primary hover:bg-primary/90">
@@ -113,25 +134,28 @@ export default function RolesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Liste des roles</CardTitle>
+          <CardTitle>Liste des rôles</CardTitle>
           <CardDescription>
-            {pagination.total} role(s) au total
+            {pagination.total} rôle(s) au total
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+            <div className="relative flex-1 w-full md:max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(1)
-                }}
+                placeholder="Rechercher un rôle..."
+                value={state.search}
+                onChange={(e) => onSearch(e.target.value)}
                 className="pl-9"
               />
             </div>
+
+            <DateRangePicker 
+              from={state.from}
+              to={state.to}
+              onRangeChange={onDateRangeChange}
+            />
           </div>
 
           {isLoading ? (
@@ -142,96 +166,112 @@ export default function RolesPage() {
             </div>
           ) : error ? (
             <div className="text-center py-8 text-muted-foreground">
-              Erreur lors du chargement des roles
+              Erreur lors du chargement des rôles
             </div>
           ) : roles.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Aucun role trouve
+              Aucun rôle trouvé
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Permissions</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {roles.map((role) => (
-                    <TableRow key={role.id}>
-                      <TableCell className="font-medium">{role.name}</TableCell>
-                      <TableCell>
-                        <code className="px-2 py-1 bg-muted rounded text-xs">
-                          {role.slug}
-                        </code>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1 max-w-md">
-                          {role.permissions?.slice(0, 3).map((perm) => (
-                            <Badge key={perm.id} variant="outline" className="text-xs">
-                              {perm.name}
+              <div className="rounded-md border border-border/50">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead 
+                        className="cursor-pointer hover:text-foreground transition-colors"
+                        onClick={() => handleSort("name")}
+                      >
+                        <div className="flex items-center">
+                          Nom {renderSortIcon("name")}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:text-foreground transition-colors"
+                        onClick={() => handleSort("slug")}
+                      >
+                        <div className="flex items-center">
+                          Slug {renderSortIcon("slug")}
+                        </div>
+                      </TableHead>
+                      <TableHead>Permissions</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {roles.map((role) => (
+                      <TableRow key={role.id}>
+                        <TableCell className="font-medium">{role.name}</TableCell>
+                        <TableCell>
+                          <code className="px-2 py-1 bg-muted rounded text-xs text-muted-foreground border border-border/50">
+                            {role.slug}
+                          </code>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1 max-w-md">
+                            {role.permissions?.slice(0, 3).map((perm) => (
+                              <Badge key={perm.id} variant="outline" className="text-xs border-primary/20 text-primary/80">
+                                {perm.name}
+                              </Badge>
+                            ))}
+                            {(role.permissions?.length || 0) > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{(role.permissions?.length || 0) - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {systemRoles.includes(role.slug) ? (
+                            <Badge variant="default" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                              Système
                             </Badge>
-                          ))}
-                          {(role.permissions?.length || 0) > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{(role.permissions?.length || 0) - 3}
+                          ) : (
+                            <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                              Personnalisé
                             </Badge>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {systemRoles.includes(role.slug) ? (
-                          <Badge variant="default" className="bg-primary">
-                            Systeme
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            Personnalise
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Modifier
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Key className="mr-2 h-4 w-4" />
-                              Gerer les permissions
-                            </DropdownMenuItem>
-                            {isRoot && !systemRoles.includes(role.slug) && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() => setDeleteRoleId(role.id)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Supprimer
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Key className="mr-2 h-4 w-4" />
+                                Gérer les permissions
+                              </DropdownMenuItem>
+                              {isRoot && !systemRoles.includes(role.slug) && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => setDeleteRoleId(role.id)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Supprimer
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
               {/* Pagination */}
               <div className="flex items-center justify-between mt-4">
@@ -242,17 +282,17 @@ export default function RolesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage(page - 1)}
-                    disabled={page <= 1}
+                    onClick={() => onPageChange(state.page - 1)}
+                    disabled={state.page <= 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Precedent
+                    Précédent
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage(page + 1)}
-                    disabled={page >= pagination.totalPages}
+                    onClick={() => onPageChange(state.page + 1)}
+                    disabled={state.page >= pagination.totalPages}
                   >
                     Suivant
                     <ChevronRight className="h-4 w-4" />
@@ -270,7 +310,7 @@ export default function RolesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              {"Etes-vous sur de vouloir supprimer ce role ? Cette action est irreversible."}
+              {"Êtes-vous sûr de vouloir supprimer ce rôle ? Cette action est irréversible."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
