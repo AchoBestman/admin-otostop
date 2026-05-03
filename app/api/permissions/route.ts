@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { withAuth, isAdmin } from "@/lib/auth/middleware";
 import { permissionModel } from "@/lib/db/models";

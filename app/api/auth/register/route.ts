@@ -5,6 +5,9 @@ import { userModel, roleModel, logModel } from "@/lib/db/models";
 import { sendMail } from "@/lib/mail/transporter";
 import { welcomeTemplate } from "@/lib/mail/templates";
 import { success, error, validationError } from "@/lib/utils/response";
+import type { User } from "@/types";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +42,7 @@ export async function POST(request: NextRequest) {
       city: data.city || null,
       address: data.address || null,
       status: "activated",
-    } as Partial<import("@/types").User>);
+    } as Partial<User>);
 
     // Assign default customer role
     const customerRole = await roleModel.findBySlug("customer");

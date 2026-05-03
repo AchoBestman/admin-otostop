@@ -4,6 +4,9 @@ import { resetPasswordSchema } from "@/lib/validators/auth";
 import { userModel, logModel } from "@/lib/db/models";
 import { verifyResetToken } from "@/lib/auth/jwt";
 import { success, error, validationError } from "@/lib/utils/response";
+import type { User } from "@/types";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Update password
-    await userModel.update(user.id, { password: hashedPassword } as Partial<import("@/types").User>);
+    await userModel.update(user.id, { password: hashedPassword } as Partial<User>);
 
     // Log the action
     await logModel.log("update", "users", user.id, undefined, "Password reset");

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { passwordRequestSchema } from "@/lib/validators/auth";
 import { userModel } from "@/lib/db/models";

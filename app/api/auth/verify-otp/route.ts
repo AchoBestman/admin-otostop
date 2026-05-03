@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { otpSchema } from "@/lib/validators/auth";
 import { userModel } from "@/lib/db/models";
