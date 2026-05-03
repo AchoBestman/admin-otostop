@@ -51,8 +51,8 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
       totalPages: result.totalPages,
     });
 
-  } catch (err) {
-    console.error("Users list error:", err);
+  } catch (error: unknown) {
+    console.error("Users list error:", error);
     return error("Failed to fetch users", 500);
   }
 });
@@ -120,8 +120,8 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
 
     return success(user, "User created successfully");
 
-  } catch (err) {
-    console.error("Create user error:", err);
+  } catch (error: unknown) {
+    console.error("Create user error:", error);
     return error("Failed to create user", 500);
   }
 });

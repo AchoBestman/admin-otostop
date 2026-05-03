@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
 
     return success(safeUser, "Account created successfully");
 
-  } catch (err) {
-    console.error("Registration error:", err);
+  } catch (error: unknown) {
+    console.error("Registration error:", error);
     return error("An error occurred during registration", 500);
   }
 }

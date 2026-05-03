@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
       permissions: user.permissions.map(p => p.slug),
     });
 
-  } catch (err) {
-    console.error("Profile fetch error:", err);
+  } catch (error: unknown) {
+    console.error("Profile fetch error:", error);
     return unauthorized("Failed to fetch profile");
   }
 }

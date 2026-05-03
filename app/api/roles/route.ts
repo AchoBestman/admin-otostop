@@ -41,8 +41,8 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
       totalPages: result.totalPages,
     });
 
-  } catch (err) {
-    console.error("Roles list error:", err);
+  } catch (error: unknown) {
+    console.error("Roles list error:", error);
     return error("Failed to fetch roles", 500);
   }
 });
@@ -82,8 +82,8 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
     const role = await roleModel.findWithPermissions(roleId);
     return success(role, "Role created successfully");
 
-  } catch (err) {
-    console.error("Create role error:", err);
+  } catch (error: unknown) {
+    console.error("Create role error:", error);
     return error("Failed to create role", 500);
   }
 });

@@ -14,16 +14,32 @@ interface FindWhereOptions extends FindOptions {
 }
 
 // Generic repository pattern for all models using Prisma
-export function createRepository<T extends BaseModel>(tableName: string, fields: string[]) {
-  // @ts-ignore - Dynamic access to prisma models
-  const model = prisma[tableName];
+export function createRepository<T extends BaseModel>(tableName: string, _fields: string[]) {
+  // Use a safer way to access the model
+  const model = (prisma as Record<string, unknown>)[tableName] as {
+    findMany: (args: { where?: Record<string, unknown>; orderBy?: Record<string, string>; take?: number; skip?: number }) => Promise<T[]>;
+    findFirst: (args: { where?: Record<string, unknown> }) => Promise<T | null>;
+    count: (args: { where?: Record<string, unknown> }) => Promise<number>;
+    create: (args: { data: Record<string, unknown> }) => Promise<T>;
+    update: (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => Promise<T>;
+    delete: (args: { where: Record<string, unknown> }) => Promise<T>;
+  };
+
+  if (!model) {
+    throw new Error(`Model ${tableName} not found in Prisma client`);
+  }
 
   return {
     // Find all records
     async findAll(options: FindOptions = {}): Promise<T[]> {
       const { includeDeleted = false, orderBy = "created_at", order = "desc", limit, offset } = options;
       
-      const queryOptions: any = {
+      const queryOptions: {
+        where: Record<string, unknown>;
+        orderBy: Record<string, string>;
+        take?: number;
+        skip?: number;
+      } = {
         where: includeDeleted ? {} : { deleted_at: null },
         orderBy: { [orderBy]: order },
       };
@@ -40,7 +56,7 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
 
     // Find by ID
     async findById(id: number, includeDeleted = false): Promise<T | null> {
-      const where: any = { id };
+      const where: Record<string, unknown> = { id };
       if (!includeDeleted) {
         where.deleted_at = null;
       }
@@ -49,7 +65,7 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
 
     // Find one by conditions
     async findOne(where: Record<string, unknown>, includeDeleted = false): Promise<T | null> {
-      const fullWhere: any = { ...where };
+      const fullWhere: Record<string, unknown> = { ...where };
       if (!includeDeleted) {
         fullWhere.deleted_at = null;
       }
@@ -60,12 +76,17 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
     async findWhere(options: FindWhereOptions = {}): Promise<T[]> {
       const { where = {}, includeDeleted = false, orderBy = "created_at", order = "desc", limit, offset } = options;
       
-      const fullWhere: any = { ...where };
+      const fullWhere: Record<string, unknown> = { ...where };
       if (!includeDeleted) {
         fullWhere.deleted_at = null;
       }
 
-      const queryOptions: any = {
+      const queryOptions: {
+        where: Record<string, unknown>;
+        orderBy: Record<string, string>;
+        take?: number;
+        skip?: number;
+      } = {
         where: fullWhere,
         orderBy: { [orderBy]: order },
       };
@@ -82,7 +103,7 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
 
     // Count records
     async count(where: Record<string, unknown> = {}, includeDeleted = false): Promise<number> {
-      const fullWhere: any = { ...where };
+      const fullWhere: Record<string, unknown> = { ...where };
       if (!includeDeleted) {
         fullWhere.deleted_at = null;
       }
@@ -96,24 +117,24 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
           ...data,
           created_at: new Date(),
           created_by: createdBy || null,
-        },
+        } as Record<string, unknown>,
       });
-      return result.id;
+      return (result as { id: number }).id;
     },
 
     // Update record
     async update(id: number, data: Partial<T>, updatedBy?: number): Promise<boolean> {
       try {
         const result = await model.update({
-          where: { id, deleted_at: null },
+          where: { id, deleted_at: null } as unknown as Record<string, unknown>,
           data: {
             ...data,
             updated_at: new Date(),
             updated_by: updatedBy || null,
-          },
+          } as Record<string, unknown>,
         });
         return !!result;
-      } catch (error) {
+      } catch {
         return false;
       }
     },
@@ -122,14 +143,14 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
     async delete(id: number, deletedBy?: number): Promise<boolean> {
       try {
         const result = await model.update({
-          where: { id, deleted_at: null },
+          where: { id, deleted_at: null } as unknown as Record<string, unknown>,
           data: {
             deleted_at: new Date(),
             deleted_by: deletedBy || null,
-          },
+          } as Record<string, unknown>,
         });
         return !!result;
-      } catch (error) {
+      } catch {
         return false;
       }
     },
@@ -138,14 +159,14 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
     async restore(id: number): Promise<boolean> {
       try {
         const result = await model.update({
-          where: { id },
+          where: { id } as unknown as Record<string, unknown>,
           data: {
             deleted_at: null,
             deleted_by: null,
-          },
+          } as Record<string, unknown>,
         });
         return !!result;
-      } catch (error) {
+      } catch {
         return false;
       }
     },
@@ -154,10 +175,10 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
     async hardDelete(id: number): Promise<boolean> {
       try {
         const result = await model.delete({
-          where: { id },
+          where: { id } as unknown as Record<string, unknown>,
         });
         return !!result;
-      } catch (error) {
+      } catch {
         return false;
       }
     },
@@ -184,7 +205,7 @@ export function createRepository<T extends BaseModel>(tableName: string, fields:
         includeDeleted = false,
       } = params;
 
-      const fullWhere: any = { ...where };
+      const fullWhere: Record<string, unknown> = { ...where };
       
       if (!includeDeleted) {
         fullWhere.deleted_at = null;

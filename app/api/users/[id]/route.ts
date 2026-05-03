@@ -25,8 +25,8 @@ export const GET = withAuth(async (_request: NextRequest, context: RouteContext,
 
     return success(user);
 
-  } catch (err) {
-    console.error("Get user error:", err);
+  } catch (error: unknown) {
+    console.error("Get user error:", error);
     return error("Failed to fetch user", 500);
   }
 });
@@ -102,8 +102,8 @@ export const PUT = withAuth(async (request: NextRequest, context: RouteContext, 
     const user = await userModel.findWithRoles(userId);
     return success(user, "User updated successfully");
 
-  } catch (err) {
-    console.error("Update user error:", err);
+  } catch (error: unknown) {
+    console.error("Update user error:", error);
     return error("Failed to update user", 500);
   }
 });
@@ -145,8 +145,8 @@ export const DELETE = withAuth(async (_request: NextRequest, context: RouteConte
 
     return success(null, "User deleted successfully");
 
-  } catch (err) {
-    console.error("Delete user error:", err);
+  } catch (error: unknown) {
+    console.error("Delete user error:", error);
     return error("Failed to delete user", 500);
   }
 });

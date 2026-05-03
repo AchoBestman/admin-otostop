@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
       "If an account exists with this email, you will receive a password reset link"
     );
 
-  } catch (err) {
-    console.error("Password request error:", err);
+  } catch (error: unknown) {
+    console.error("Password request error:", error);
     return error("An error occurred. Please try again.", 500);
   }
 }

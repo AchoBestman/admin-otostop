@@ -24,8 +24,8 @@ export const GET = withAuth(async (_request: NextRequest, context: RouteContext,
 
     return success(role);
 
-  } catch (err) {
-    console.error("Get role error:", err);
+  } catch (error: unknown) {
+    console.error("Get role error:", error);
     return error("Failed to fetch role", 500);
   }
 });
@@ -82,8 +82,8 @@ export const PUT = withAuth(async (request: NextRequest, context: RouteContext, 
     const role = await roleModel.findWithPermissions(roleId);
     return success(role, "Role updated successfully");
 
-  } catch (err) {
-    console.error("Update role error:", err);
+  } catch (error: unknown) {
+    console.error("Update role error:", error);
     return error("Failed to update role", 500);
   }
 });
@@ -118,8 +118,8 @@ export const DELETE = withAuth(async (_request: NextRequest, context: RouteConte
 
     return success(null, "Role deleted successfully");
 
-  } catch (err) {
-    console.error("Delete role error:", err);
+  } catch (error: unknown) {
+    console.error("Delete role error:", error);
     return error("Failed to delete role", 500);
   }
 });
