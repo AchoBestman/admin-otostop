@@ -62,7 +62,7 @@ export default function ProfilePage() {
     setIsLoading(true)
     try {
       const res = await fetch(`/api/users/${user?.id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       })

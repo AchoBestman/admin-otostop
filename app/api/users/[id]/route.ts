@@ -35,13 +35,15 @@ export const GET = withAuth(async (_request: NextRequest, context: RouteContext,
 // PATCH update user
 export const PATCH = withAuth(async (request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
-    if (!isRoot(auth)) {
-      return forbidden("Seul le super admin peut gérer l'administration");
-    }
-
     const params = await context.params;
     const userId = parseInt(params.id);
     const body = await request.json();
+
+    // Check permission: Root can update anyone, others can only update themselves
+    const isSelf = auth.userId === userId;
+    if (!isRoot(auth) && !isSelf) {
+      return forbidden("Vous n'avez pas la permission de modifier cet utilisateur");
+    }
 
     // Validate input
     const validation = updateUserSchema.safeParse(body);
@@ -81,7 +83,10 @@ export const PATCH = withAuth(async (request: NextRequest, context: RouteContext
     if (data.country !== undefined) updateData.country = data.country || null;
     if (data.city !== undefined) updateData.city = data.city || null;
     if (data.address !== undefined) updateData.address = data.address || null;
-    if (data.status) updateData.status = data.status;
+    // Security: Only root can update status and roles
+    if (!isRoot(auth)) {
+      delete updateData.status;
+    }
 
     // Hash password if provided
     if (data.password) {
@@ -91,8 +96,8 @@ export const PATCH = withAuth(async (request: NextRequest, context: RouteContext
     // Update user
     await userModel.update(userId, updateData, auth.userId);
 
-    // Update roles if provided
-    if (data.role_ids) {
+    // Update roles if provided (Only root can update roles)
+    if (data.role_ids && isRoot(auth)) {
       await userModel.assignRoles(userId, data.role_ids);
     }
 
