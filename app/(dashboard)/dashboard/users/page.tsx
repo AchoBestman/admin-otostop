@@ -2,12 +2,13 @@
 
 import * as React from "react"
 import useSWR from "swr"
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Power, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Power, ChevronLeft, ChevronRight, Mail } from "lucide-react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/components/providers/auth-provider"
 import { useDataTable } from "@/lib/hooks/use-data-table"
 import { DateRangePicker } from "@/components/date-range-picker"
+import { UserDialog } from "@/components/users/user-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -78,6 +79,8 @@ export default function UsersPage() {
   const [deleteUserId, setDeleteUserId] = React.useState<number | null>(null)
   const [toggleUserId, setToggleUserId] = React.useState<number | null>(null)
   const [toggleStatus, setToggleStatus] = React.useState<"activated" | "deactivated">("activated")
+  const [isUserDialogOpen, setIsUserDialogOpen] = React.useState(false)
+  const [editingUser, setEditingUser] = React.useState<SafeUser | null>(null)
 
   // Build query string for API
   const queryParams = new URLSearchParams({
@@ -141,6 +144,7 @@ export default function UsersPage() {
 
       if (res.ok) {
         toast.success(`Utilisateur ${toggleStatus === "activated" ? "activé" : "désactivé"}`)
+        // Force revalidation of the SWR cache
         mutate()
       } else {
         toast.error("Erreur", { description: result.message })
@@ -150,6 +154,32 @@ export default function UsersPage() {
     } finally {
       setToggleUserId(null)
     }
+  }
+
+  const handleResendEmail = async (userId: number) => {
+    const promise = fetch(`/api/users/${userId}/resend-reset-email`, {
+      method: "POST",
+    }).then(async (res) => {
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || "Failed to resend email")
+      return data
+    })
+
+    toast.promise(promise, {
+      loading: "Envoi de l'email en cours...",
+      success: "Email de réinitialisation envoyé avec succès",
+      error: (err) => `Erreur: ${err.message}`,
+    })
+  }
+
+  const openCreateDialog = () => {
+    setEditingUser(null)
+    setIsUserDialogOpen(true)
+  }
+
+  const openEditDialog = (user: SafeUser) => {
+    setEditingUser(user)
+    setIsUserDialogOpen(true)
   }
 
   const users = data?.data || []
@@ -164,10 +194,12 @@ export default function UsersPage() {
             Gérez les utilisateurs de la plateforme
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" />
-          Ajouter
-        </Button>
+        {(isRoot || hasPermission("can_create_user")) && (
+          <Button onClick={openCreateDialog} className="bg-primary hover:bg-primary/90">
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -301,10 +333,16 @@ export default function UsersPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Modifier
                               </DropdownMenuItem>
+                              {isRoot && (
+                                <DropdownMenuItem onClick={() => handleResendEmail(user.id)}>
+                                  <Mail className="mr-2 h-4 w-4" />
+                                  Renvoyer l'email
+                                </DropdownMenuItem>
+                              )}
                               {canToggleStatus && (
                                 <DropdownMenuItem
                                   onClick={() => {
@@ -406,6 +444,13 @@ export default function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UserDialog
+        open={isUserDialogOpen}
+        onOpenChange={setIsUserDialogOpen}
+        user={editingUser}
+        onSuccess={() => mutate()}
+      />
     </div>
   )
 }
