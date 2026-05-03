@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id            Int      @id @default(autoincrement())
+  first_name    String
+  last_name     String
+  email         String   @unique
+  password      String
+  phone         String?
+  country       String?
+  city          String?
+  address       String?
+  status        String   @default("activated")
+  otp_code      String?
+  otp_expires_at DateTime?
+  created_at    DateTime @default(now())
+  updated_at    DateTime?
+  deleted_at    DateTime?
+  created_by    Int?
+  updated_by    Int?
+  deleted_by    Int?
+  user_roles    user_roles[]
+  logs_histories logs_histories[]
+}
+
+model roles {
+  id         Int    @id @default(autoincrement())
+  name       String
+  slug       String @unique
+  created_at DateTime @default(now())
+  updated_at DateTime?
+  deleted_at DateTime?
+  created_by Int?
+  updated_by Int?
+  deleted_by Int?
+  user_roles user_roles[]
+  role_permissions role_permissions[]
+}
+
+model permissions {
+  id         Int @id @default(autoincrement())
+  name       String
+  slug       String @unique
+  created_at DateTime @default(now())
+  updated_at DateTime?
+  deleted_at DateTime?
+  created_by Int?
+  updated_by Int?
+  deleted_by Int?
+  role_permissions role_permissions[]
+}
+
+model user_roles {
+  user_id Int
+  role_id Int
+
+  user users @relation(fields: [user_id], references: [id])
+  role roles @relation(fields: [role_id], references: [id])
+
+  @@id([user_id, role_id])
+}
+
+model role_permissions {
+  role_id Int
+  permission_id Int
+
+  role roles @relation(fields: [role_id], references: [id])
+  permission permissions @relation(fields: [permission_id], references: [id])
+
+  @@id([role_id, permission_id])
+}
+
+model logs_histories {
+  id Int @id @default(autoincrement())
+  action String
+  model String
+  model_id Int
+  user_id Int?
+  details String?
+  created_at DateTime @default(now())
+  updated_at DateTime?
+  deleted_at DateTime?
+  created_by Int?
+  updated_by Int?
+  deleted_by Int?
+
+  user users? @relation(fields: [user_id], references: [id])
+}
