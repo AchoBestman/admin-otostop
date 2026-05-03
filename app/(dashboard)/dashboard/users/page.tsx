@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import useSWR from "swr"
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Power, ChevronLeft, ChevronRight, Mail, Shield } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Power, ChevronLeft, ChevronRight, Mail, Shield, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/components/providers/auth-provider"
@@ -47,7 +47,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import type { SafeUser } from "@/types"

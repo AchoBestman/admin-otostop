@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import useSWR from "swr"
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Key, ChevronLeft, ChevronRight, Shield } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search, MoreHorizontal, Pencil, Key, Trash2, ChevronLeft, ChevronRight, Shield } from "lucide-react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/components/providers/auth-provider"
@@ -40,8 +40,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search, MoreHorizontal, Pencil, Key, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
-import { toast } from "sonner"
 import type { RoleWithPermissions } from "@/types"
 
 interface RolesResponse {
