@@ -59,9 +59,12 @@ async function main() {
   }
 
   // users
+  const rootEmail = process.env.ROOT_EMAIL || ''
+  const adminEmail = process.env.ADMIN_EMAIL || ''
+
   const users = [
-    { first_name: 'Super', last_name: 'Root', email: 'aikpeachille55@gmail.com', password: process.env.SUPER_ROOT_PASSWORD || 'Bestm@n1995' },
-    { first_name: 'Admin', last_name: 'User', email: 'aikpe@kassigroup.com', password: process.env.ADMIN_PASSWORD || 'Bestm@n1995' }
+    { first_name: 'Super', last_name: 'Root', email: rootEmail, password: process.env.ROOT_PASSWORD || '' },
+    { first_name: 'Admin', last_name: 'User', email: adminEmail, password: process.env.ADMIN_PASSWORD || '' }
   ]
 
   for (const u of users) {
@@ -74,8 +77,8 @@ async function main() {
   }
 
   // assign roles to users
-  const superUser = await prisma.users.findUnique({ where: { email: 'aikpeachille55@gmail.com' } })
-  const adminUser = await prisma.users.findUnique({ where: { email: 'aikpe@kassigroup.com' } })
+  const superUser = await prisma.users.findUnique({ where: { email: rootEmail } })
+  const adminUser = await prisma.users.findUnique({ where: { email: adminEmail } })
   if (superUser && rootRole) {
     await prisma.user_roles.upsert({ where: { user_id_role_id: { user_id: superUser.id, role_id: rootRole.id } }, update: {}, create: { user_id: superUser.id, role_id: rootRole.id } })
   }
