@@ -7,6 +7,7 @@ import { createUserSchema } from "@/lib/validators/user";
 import { generateResetToken } from "@/lib/auth/jwt";
 import { sendMail } from "@/lib/mail/transporter";
 import { passwordResetTemplate } from "@/lib/mail/templates";
+import { parseQueryParams, buildPrismaWhere } from "@/lib/utils/query";
 import { paginated, success, error, validationError, forbidden } from "@/lib/utils/response";
 import type { JWTPayload, User } from "@/types";
 
@@ -18,31 +19,19 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
       return forbidden("You do not have permission to view users");
     }
 
-    const { searchParams } = new URL(request.url);
-    
-    // Parse query parameters
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") || "";
-    const orderBy = searchParams.get("sort") || "created_at";
-    const order = (searchParams.get("order") || "DESC").toUpperCase() as "ASC" | "DESC";
-
-    // Build where conditions
-    const where: Record<string, unknown> = {};
-    if (status && (status === "activated" || status === "deactivated")) {
-      where.status = status;
-    }
+    // Use unified query parser
+    const params = parseQueryParams(request);
+    const where = buildPrismaWhere(params);
 
     // Search with pagination
     const result = await userModel.search({
       searchFields: ["first_name", "last_name", "email", "phone", "city", "country"],
-      searchTerm: search,
+      searchTerm: params.search,
       where,
-      page,
-      limit,
-      orderBy,
-      order,
+      page: params.page,
+      limit: params.limit,
+      orderBy: params.sortBy,
+      order: params.order,
     });
 
     // Transform to safe users (remove passwords)

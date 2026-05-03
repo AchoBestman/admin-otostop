@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { withAuth, isAdmin } from "@/lib/auth/middleware";
 import { roleModel, logModel } from "@/lib/db/models";
 import { createRoleSchema } from "@/lib/validators/role";
+import { parseQueryParams, buildPrismaWhere } from "@/lib/utils/query";
 import { paginated, success, error, validationError, forbidden } from "@/lib/utils/response";
 import type { JWTPayload, Role } from "@/types";
 
@@ -13,18 +14,18 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
       return forbidden("You do not have permission to view roles");
     }
 
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const search = searchParams.get("search") || "";
+    // Use unified query parser
+    const params = parseQueryParams(request);
+    const where = buildPrismaWhere(params);
 
     const result = await roleModel.search({
       searchFields: ["name", "slug"],
-      searchTerm: search,
-      page,
-      limit,
-      orderBy: "name",
-      order: "ASC",
+      searchTerm: params.search,
+      where,
+      page: params.page,
+      limit: params.limit,
+      orderBy: params.sortBy === "created_at" ? "name" : params.sortBy, // Default sort for roles
+      order: params.order,
     });
 
     // Get permissions for each role

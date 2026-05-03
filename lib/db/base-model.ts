@@ -41,7 +41,7 @@ export function createRepository<T extends BaseModel>(tableName: string, _fields
         skip?: number;
       } = {
         where: includeDeleted ? {} : { deleted_at: null },
-        orderBy: { [orderBy]: order },
+        orderBy: { [orderBy]: order.toLowerCase() },
       };
 
       if (limit) {
@@ -88,7 +88,7 @@ export function createRepository<T extends BaseModel>(tableName: string, _fields
         skip?: number;
       } = {
         where: fullWhere,
-        orderBy: { [orderBy]: order },
+        orderBy: { [orderBy]: order.toLowerCase() },
       };
 
       if (limit) {
@@ -126,7 +126,7 @@ export function createRepository<T extends BaseModel>(tableName: string, _fields
     async update(id: number, data: Partial<T>, updatedBy?: number): Promise<boolean> {
       try {
         const result = await model.update({
-          where: { id, deleted_at: null } as unknown as Record<string, unknown>,
+          where: { id } as unknown as Record<string, unknown>,
           data: {
             ...data,
             updated_at: new Date(),
@@ -143,7 +143,7 @@ export function createRepository<T extends BaseModel>(tableName: string, _fields
     async delete(id: number, deletedBy?: number): Promise<boolean> {
       try {
         const result = await model.update({
-          where: { id, deleted_at: null } as unknown as Record<string, unknown>,
+          where: { id } as unknown as Record<string, unknown>,
           data: {
             deleted_at: new Date(),
             deleted_by: deletedBy || null,
@@ -217,12 +217,14 @@ export function createRepository<T extends BaseModel>(tableName: string, _fields
         }));
       }
 
+      const fullOrder = order.toLowerCase() as "asc" | "desc";
+
       const total = await model.count({ where: fullWhere });
       
       const skip = (page - 1) * limit;
       const data = await model.findMany({
         where: fullWhere,
-        orderBy: { [orderBy]: order },
+        orderBy: { [orderBy]: fullOrder },
         take: limit,
         skip,
       });
