@@ -23,7 +23,7 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
     const params = parseQueryParams(request);
     const where = buildPrismaWhere(params);
 
-    // Search with pagination
+    // Search with pagination and roles
     const result = await userModel.search({
       searchFields: ["first_name", "last_name", "email", "phone", "city", "country"],
       searchTerm: params.search,
@@ -32,10 +32,23 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
       limit: params.limit,
       orderBy: params.sortBy,
       order: params.order,
+      include: {
+        user_roles: {
+          include: {
+            role: true
+          }
+        }
+      }
     });
 
-    // Transform to safe users (remove passwords)
-    const safeUsers = result.data.map(user => userModel.toSafeUser(user));
+    // Transform to safe users and flatten roles
+    const safeUsers = result.data.map(user => {
+      const roles = (user as any).user_roles
+        ?.map((ur: any) => ur.role)
+        .filter((r: any) => r && r.deleted_at === null) || [];
+      
+      return userModel.toSafeUser(user, roles);
+    });
 
     return paginated(safeUsers, {
       page: result.page,

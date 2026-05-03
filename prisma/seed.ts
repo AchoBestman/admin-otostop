@@ -59,8 +59,13 @@ async function main() {
   }
 
   // users
-  const rootEmail = process.env.ROOT_EMAIL || ''
-  const adminEmail = process.env.ADMIN_EMAIL || ''
+  const rootEmail = process.env.ROOT_EMAIL || 'aikpeachille55@gmail.com'
+  const adminEmail = process.env.ADMIN_EMAIL || 'aikpe@kassigroup.com'
+
+  if (!rootEmail || !adminEmail) {
+    console.error("Error: ROOT_EMAIL and ADMIN_EMAIL must be defined in .env")
+    return
+  }
 
   const users = [
     { first_name: 'Super', last_name: 'Root', email: rootEmail, password: process.env.ROOT_PASSWORD || '' },
@@ -71,7 +76,14 @@ async function main() {
     const hash = await bcrypt.hash(u.password, 12)
     await prisma.users.upsert({
       where: { email: u.email },
-      update: { first_name: u.first_name, last_name: u.last_name, password: hash, status: 'activated', updated_at: new Date() },
+      update: { 
+        first_name: u.first_name, 
+        last_name: u.last_name, 
+        password: hash, 
+        status: 'activated', 
+        updated_at: new Date(),
+        deleted_at: null // Ensure not deleted
+      },
       create: { first_name: u.first_name, last_name: u.last_name, email: u.email, password: hash, status: 'activated' }
     })
   }
@@ -79,11 +91,23 @@ async function main() {
   // assign roles to users
   const superUser = await prisma.users.findUnique({ where: { email: rootEmail } })
   const adminUser = await prisma.users.findUnique({ where: { email: adminEmail } })
+  
   if (superUser && rootRole) {
-    await prisma.user_roles.upsert({ where: { user_id_role_id: { user_id: superUser.id, role_id: rootRole.id } }, update: {}, create: { user_id: superUser.id, role_id: rootRole.id } })
+    await prisma.user_roles.upsert({ 
+      where: { user_id_role_id: { user_id: superUser.id, role_id: rootRole.id } }, 
+      update: {}, 
+      create: { user_id: superUser.id, role_id: rootRole.id } 
+    })
+    console.log(`Assigned ROOT role to ${rootEmail}`)
   }
+  
   if (adminUser && adminRole) {
-    await prisma.user_roles.upsert({ where: { user_id_role_id: { user_id: adminUser.id, role_id: adminRole.id } }, update: {}, create: { user_id: adminUser.id, role_id: adminRole.id } })
+    await prisma.user_roles.upsert({ 
+      where: { user_id_role_id: { user_id: adminUser.id, role_id: adminRole.id } }, 
+      update: {}, 
+      create: { user_id: adminUser.id, role_id: adminRole.id } 
+    })
+    console.log(`Assigned ADMIN role to ${adminEmail}`)
   }
 }
 

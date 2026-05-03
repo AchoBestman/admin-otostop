@@ -193,6 +193,7 @@ export function createRepository<T extends BaseModel>(tableName: string, _fields
       orderBy?: string;
       order?: "asc" | "desc";
       includeDeleted?: boolean;
+      include?: Record<string, unknown>;
     }): Promise<{ data: T[]; total: number; page: number; limit: number; totalPages: number }> {
       const {
         searchFields = [],
@@ -203,6 +204,7 @@ export function createRepository<T extends BaseModel>(tableName: string, _fields
         orderBy = "created_at",
         order = "desc",
         includeDeleted = false,
+        include,
       } = params;
 
       const fullWhere: Record<string, unknown> = { ...where };
@@ -225,6 +227,7 @@ export function createRepository<T extends BaseModel>(tableName: string, _fields
       const data = await model.findMany({
         where: fullWhere,
         orderBy: { [orderBy]: fullOrder },
+        include,
         take: limit,
         skip,
       });
