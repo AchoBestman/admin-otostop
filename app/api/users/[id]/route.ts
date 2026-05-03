@@ -32,8 +32,8 @@ export const GET = withAuth(async (_request: NextRequest, context: RouteContext,
   }
 });
 
-// PUT update user
-export const PUT = withAuth(async (request: NextRequest, context: RouteContext, auth: JWTPayload) => {
+// PATCH update user
+export const PATCH = withAuth(async (request: NextRequest, context: RouteContext, auth: JWTPayload) => {
   try {
     if (!isAdmin(auth)) {
       return forbidden("You do not have permission to update users");
