@@ -15,7 +15,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/comp
 function VerifyOTPContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { verifyOTP, login } = useAuth()
+  const { verifyOTP, resendOTP } = useAuth()
   const [otp, setOtp] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
   const [isResending, setIsResending] = React.useState(false)
@@ -76,17 +76,16 @@ function VerifyOTPContent() {
   const handleResend = async () => {
     setIsResending(true)
     try {
-      // Re-trigger login to send new OTP
-      const result = await login(email, "")
+      const result = await resendOTP(email)
       
       if (result.success) {
-        toast.success("Code renvoye", {
-          description: "Un nouveau code a ete envoye a votre email",
+        toast.success("Code renvoyé", {
+          description: "Un nouveau code a été envoyé à votre email",
         })
         setCountdown(60) // 60 seconds countdown
       } else {
         toast.error("Erreur", {
-          description: "Impossible de renvoyer le code. Veuillez vous reconnecter.",
+          description: result.message || "Impossible de renvoyer le code",
         })
       }
     } catch {

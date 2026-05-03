@@ -11,6 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; message: string; email?: string }>;
   verifyOTP: (email: string, otp: string) => Promise<{ success: boolean; message: string }>;
+  resendOTP: (email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -106,6 +107,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const resendOTP = async (email: string) => {
+    try {
+      const res = await fetch("/api/auth/verify-otp/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        return { success: false, message: data.message || "Failed to resend code" }
+      }
+
+      return { success: true, message: data.message }
+    } catch (error) {
+      console.error("OTP resend error:", error)
+      return { success: false, message: "An error occurred while resending the code" }
+    }
+  }
+
   const logout = async () => {
     try {
       await fetch("/api/auth/profile?action=logout", { method: "POST" })
@@ -144,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user && !!token,
     login,
     verifyOTP,
+    resendOTP,
     logout,
     refreshProfile,
     hasPermission,

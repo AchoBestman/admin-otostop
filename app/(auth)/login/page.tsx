@@ -151,7 +151,7 @@ function LoginContent() {
                 href="/forgot-password"
                 className="text-sm text-primary hover:underline"
               >
-                Mot de passe oublie ?
+                Mot de passe oublié ?
               </Link>
             </div>
 
