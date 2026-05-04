@@ -60,8 +60,8 @@ export const PATCH = withPermission(
 
       return success(updatedUser, `User ${status === "activated" ? "activated" : "deactivated"} successfully`);
 
-    } catch (error: unknown) {
-      console.error("Toggle status error:", error);
+    } catch (err: unknown) {
+      console.error("Toggle status error:", err);
       return error("Failed to toggle user status", 500);
     }
   }

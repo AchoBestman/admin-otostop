@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
       "If an account exists with this email, you will receive a password reset link"
     );
 
-  } catch (error: unknown) {
-    console.error("Password request error:", error);
+  } catch (err: unknown) {
+    console.error("Password request error:", err);
     return error("An error occurred. Please try again.", 500);
   }
 }

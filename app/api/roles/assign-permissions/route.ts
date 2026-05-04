@@ -44,8 +44,8 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
     const updatedRole = await roleModel.findWithPermissions(role_id);
     return success(updatedRole, "Permissions assigned successfully");
 
-  } catch (error: unknown) {
-    console.error("Assign permissions error:", error);
+  } catch (err: unknown) {
+    console.error("Assign permissions error:", err);
     return error("Failed to assign permissions", 500);
   }
 });

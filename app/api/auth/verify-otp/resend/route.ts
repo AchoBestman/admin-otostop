@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
       "Un nouveau code a été envoyé à votre adresse email"
     );
 
-  } catch (error: unknown) {
-    console.error("Resend OTP error:", error);
+  } catch (err: unknown) {
+    console.error("Resend OTP error:", err);
     return error("Une erreur est survenue lors de l'envoi du code", 500);
   }
 }

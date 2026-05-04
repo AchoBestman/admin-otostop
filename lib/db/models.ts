@@ -162,8 +162,8 @@ export const userModel = {
     });
   },
 
-  // Reset OTP
-  async resetOTP(userId: number): Promise<void> {
+  // Clear OTP
+  async clearOTP(userId: number): Promise<void> {
     await (prisma as any).users.update({
       where: { id: userId },
       data: {

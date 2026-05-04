@@ -26,8 +26,8 @@ export const GET = withAuth(async (_request: NextRequest, context: RouteContext,
 
     return success(user);
 
-  } catch (error: unknown) {
-    console.error("Get user error:", error);
+  } catch (err: unknown) {
+    console.error("Get user error:", err);
     return error("Failed to fetch user", 500);
   }
 });
@@ -108,8 +108,8 @@ export const PATCH = withAuth(async (request: NextRequest, context: RouteContext
     const user = await userModel.findWithRoles(userId);
     return success(user, "User updated successfully");
 
-  } catch (error: unknown) {
-    console.error("Update user error:", error);
+  } catch (err: unknown) {
+    console.error("Update user error:", err);
     return error("Failed to update user", 500);
   }
 });
@@ -151,8 +151,8 @@ export const DELETE = withAuth(async (_request: NextRequest, context: RouteConte
 
     return success(null, "User deleted successfully");
 
-  } catch (error: unknown) {
-    console.error("Delete user error:", error);
+  } catch (err: unknown) {
+    console.error("Delete user error:", err);
     return error("Failed to delete user", 500);
   }
 });

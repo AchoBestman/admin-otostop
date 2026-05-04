@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
 
     return response;
 
-  } catch (error: unknown) {
-    console.error("OTP verification error:", error);
+  } catch (err: unknown) {
+    console.error("OTP verification error:", err);
     return error("An error occurred during verification", 500);
   }
 }

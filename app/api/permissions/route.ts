@@ -19,8 +19,8 @@ export const GET = withAuth(async (_request: NextRequest, _context, auth: JWTPay
 
     return success(permissions);
 
-  } catch (error: unknown) {
-    console.error("Permissions list error:", error);
+  } catch (err: unknown) {
+    console.error("Permissions list error:", err);
     return error("Failed to fetch permissions", 500);
   }
 });

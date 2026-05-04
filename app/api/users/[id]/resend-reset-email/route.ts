@@ -44,8 +44,8 @@ export const POST = withAuth(async (_request: NextRequest, context: RouteContext
 
     return success(null, "Reset email sent successfully to " + user.email);
 
-  } catch (error: unknown) {
-    console.error("Resend reset email error:", error);
+  } catch (err: unknown) {
+    console.error("Resend reset email error:", err);
     return error("Failed to send reset email", 500);
   }
 });

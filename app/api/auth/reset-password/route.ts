@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
 
     return success(null, "Password has been reset successfully");
 
-  } catch (error: unknown) {
-    console.error("Reset password error:", error);
+  } catch (err: unknown) {
+    console.error("Reset password error:", err);
     return error("An error occurred. Please try again.", 500);
   }
 }

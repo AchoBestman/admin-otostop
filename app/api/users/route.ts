@@ -57,8 +57,8 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
       totalPages: result.totalPages,
     });
 
-  } catch (error: unknown) {
-    console.error("Users list error:", error);
+  } catch (err: unknown) {
+    console.error("Users list error:", err);
     return error("Failed to fetch users", 500);
   }
 });
