@@ -23,7 +23,11 @@ async function main() {
     { name: 'Can view users', slug: 'can_view_users' },
     { name: 'Can create users', slug: 'can_create_users' },
     { name: 'Can update users', slug: 'can_update_users' },
-    { name: 'Can view logs', slug: 'can_view_logs' }
+    { name: 'Can view logs', slug: 'can_view_logs' },
+    { name: 'Can view categories', slug: 'can_view_categories' },
+    { name: 'Can create categories', slug: 'can_create_categories' },
+    { name: 'Can update categories', slug: 'can_update_categories' },
+    { name: 'Can delete categories', slug: 'can_delete_categories' }
   ]
   for (const p of perms) {
     await prisma.permissions.upsert({ where: { slug: p.slug }, update: {}, create: p })
@@ -44,7 +48,16 @@ async function main() {
 
   // limited permissions to admin
   const adminRole = await prisma.roles.findUnique({ where: { slug: 'admin' } })
-  const adminSlugs = ['can_view_users', 'can_create_users', 'can_update_users', 'can_toggle_activated_an_account']
+  const adminSlugs = [
+    'can_view_users', 
+    'can_create_users', 
+    'can_update_users', 
+    'can_toggle_activated_an_account',
+    'can_view_categories',
+    'can_create_categories',
+    'can_update_categories',
+    'can_delete_categories'
+  ]
   if (adminRole) {
     for (const slug of adminSlugs) {
       const p = await prisma.permissions.findUnique({ where: { slug } })

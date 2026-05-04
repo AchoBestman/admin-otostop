@@ -1,6 +1,6 @@
 import { createRepository } from "./base-model";
 import prisma from "./prisma";
-import type { User, Role, Permission, LogHistory, UserWithRoles, SafeUser, RoleWithPermissions } from "@/types";
+import type { User, Role, Permission, LogHistory, UserWithRoles, SafeUser, RoleWithPermissions, Category } from "@/types";
 
 // User Repository
 export const userRepository = createRepository<User>("users", [
@@ -32,6 +32,15 @@ export const logRepository = createRepository<LogHistory>("logs_histories", [
   "model_id",
   "user_id",
   "details",
+]);
+
+// Category Repository
+export const categoryRepository = createRepository<Category>("categories", [
+  "id",
+  "libelle",
+  "description",
+  "slug",
+  "cover_image",
 ]);
 
 // Extended User Functions
@@ -269,5 +278,30 @@ export const logModel = {
         created_at: new Date()
       }
     });
+  },
+};
+
+// Category Functions
+export const categoryModel = {
+  ...categoryRepository,
+
+  // Find by slug
+  async findBySlug(slug: string): Promise<Category | null> {
+    return categoryRepository.findOne({ slug });
+  },
+
+  // Find by libelle
+  async findByLibelle(libelle: string): Promise<Category | null> {
+    return categoryRepository.findOne({ libelle });
+  },
+
+  // Check uniqueness of libelle (excluding an ID for updates)
+  async isLibelleUnique(libelle: string, excludeId?: number): Promise<boolean> {
+    const where: any = { libelle, deleted_at: null };
+    if (excludeId) {
+      where.id = { not: excludeId };
+    }
+    const count = await prisma.categories.count({ where });
+    return count === 0;
   },
 };

@@ -108,3 +108,8 @@ export function isRoot(auth: JWTPayload): boolean {
 export function isAdmin(auth: JWTPayload): boolean {
   return auth.roles.includes("admin") || auth.roles.includes("root");
 }
+
+// Helper to check if user has permission
+export function hasPermission(auth: JWTPayload, permission: string): boolean {
+  return auth.roles.includes("root") || auth.permissions.includes(permission);
+}

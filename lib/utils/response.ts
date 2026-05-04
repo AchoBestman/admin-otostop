@@ -64,3 +64,20 @@ export function validationError(errors: Record<string, string[]>): NextResponse<
 export function serverError(message = "Internal server error"): NextResponse<ApiResponse> {
   return error(message, 500);
 }
+
+// Rate limit error response
+export function rateLimitError(resetAt: number): NextResponse<ApiResponse> {
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Trop de requêtes. Veuillez réessayer plus tard.",
+      resetAt,
+    },
+    { 
+      status: 429,
+      headers: {
+        "Retry-After": Math.ceil((resetAt - Date.now()) / 1000).toString()
+      }
+    }
+  );
+}

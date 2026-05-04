@@ -12,6 +12,7 @@ import {
   User,
   ChevronUp,
   LogOut,
+  Layers,
 } from "lucide-react"
 
 import { useAuth } from "@/components/providers/auth-provider"
@@ -52,6 +53,12 @@ const adminNavItems = [
     url: "/dashboard/users",
     icon: Users,
     permission: "can_view_users",
+  },
+  {
+    title: "Catégories",
+    url: "/dashboard/categories",
+    icon: Layers,
+    permission: "can_view_categories",
   },
   {
     title: "Roles",

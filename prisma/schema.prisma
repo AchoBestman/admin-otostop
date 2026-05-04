@@ -93,3 +93,17 @@ model logs_histories {
 
   user users? @relation(fields: [user_id], references: [id])
 }
+
+model categories {
+  id          Int      @id @default(autoincrement())
+  libelle     String   @unique
+  description String?  @db.Text
+  slug        String   @unique
+  cover_image String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime?
+  deleted_at  DateTime?
+  created_by  Int?
+  updated_by  Int?
+  deleted_by  Int?
+}

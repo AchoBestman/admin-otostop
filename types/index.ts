@@ -52,6 +52,15 @@ export interface Permission extends BaseModel {
   slug: string;
 }
 
+// Category types
+export interface Category extends BaseModel {
+  id: number;
+  libelle: string;
+  description: string | null;
+  slug: string;
+  cover_image: string | null;
+}
+
 // User-Role junction
 export interface UserRole {
   user_id: number;
