@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
       "Please check your email for the verification code"
     );
 
-  } catch (error: unknown) {
-    console.error("Login error:", error);
+  } catch (err: unknown) {
+    console.error("Login error:", err);
     return error("An error occurred during login", 500);
   }
 }

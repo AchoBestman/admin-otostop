@@ -27,7 +27,11 @@ async function main() {
     { name: 'Can view categories', slug: 'can_view_categories' },
     { name: 'Can create categories', slug: 'can_create_categories' },
     { name: 'Can update categories', slug: 'can_update_categories' },
-    { name: 'Can delete categories', slug: 'can_delete_categories' }
+    { name: 'Can delete categories', slug: 'can_delete_categories' },
+    { name: 'Can view vehicles', slug: 'can_view_cars' },
+    { name: 'Can create vehicles', slug: 'can_create_cars' },
+    { name: 'Can update vehicles', slug: 'can_update_cars' },
+    { name: 'Can delete vehicles', slug: 'can_delete_cars' }
   ]
   for (const p of perms) {
     await prisma.permissions.upsert({ where: { slug: p.slug }, update: {}, create: p })
@@ -56,7 +60,11 @@ async function main() {
     'can_view_categories',
     'can_create_categories',
     'can_update_categories',
-    'can_delete_categories'
+    'can_delete_categories',
+    'can_view_cars',
+    'can_create_cars',
+    'can_update_cars',
+    'can_delete_cars'
   ]
   if (adminRole) {
     for (const slug of adminSlugs) {

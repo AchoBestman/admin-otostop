@@ -51,6 +51,7 @@ export function CategoryDialog({
       libelle: category?.libelle || "",
       description: category?.description || "",
       cover_image: category?.cover_image || "",
+      order: category?.order || 0,
     },
   })
 
@@ -61,6 +62,7 @@ export function CategoryDialog({
         libelle: category.libelle,
         description: category.description || "",
         cover_image: category.cover_image || "",
+        order: category.order || 0,
       })
       setPreview(category.cover_image)
     } else {
@@ -68,13 +70,22 @@ export function CategoryDialog({
         libelle: "",
         description: "",
         cover_image: "",
+        order: 0,
       })
       setPreview(null)
     }
   }, [category, form, open])
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent) => {
+    let file: File | undefined
+
+    if ("files" in e.target && e.target.files?.[0]) {
+      file = e.target.files[0]
+    } else if ("dataTransfer" in e && e.dataTransfer.files?.[0]) {
+      file = e.dataTransfer.files[0]
+      e.preventDefault()
+    }
+
     if (!file) return
 
     // 5MB limit
@@ -189,6 +200,20 @@ export function CategoryDialog({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="order"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ordre d'affichage</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="space-y-2">
               <FormLabel>Image de couverture (optionnel)</FormLabel>
               <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-6 bg-muted/30">
@@ -212,8 +237,19 @@ export function CategoryDialog({
                     </div>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center cursor-pointer w-full h-32 hover:bg-muted transition-colors">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <label 
+                    className="flex flex-col items-center justify-center cursor-pointer w-full h-32 hover:bg-muted transition-colors border-2 border-dashed border-transparent hover:border-primary/50"
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleImageUpload(e)
+                    }}
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                       {isUploading ? (
                         <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
                       ) : (

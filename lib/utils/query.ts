@@ -87,7 +87,20 @@ export function buildPrismaWhere(params: QueryParams) {
   // Add other generic filters
   Object.keys(params).forEach(key => {
     if (!["page", "limit", "search", "sortBy", "order", "from", "to", "status"].includes(key)) {
-      where[key] = params[key];
+      const value = params[key];
+      
+      // Handle numeric fields
+      if (key === "year" && value) {
+        where[key] = parseInt(String(value));
+      } else if (key === "mileage" && value) {
+        where[key] = { lte: parseInt(String(value)) };
+      } else if (key === "category_id" && value) {
+        where[key] = parseInt(String(value));
+      } else if (key === "order" && value) {
+        where[key] = parseInt(String(value));
+      } else {
+        where[key] = value;
+      }
     }
   });
 

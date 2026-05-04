@@ -21,7 +21,8 @@ export const GET = withAuth(async (request: NextRequest, { params }, auth: JWTPa
       return forbidden("Vous n'avez pas la permission de consulter les catégories");
     }
 
-    const id = parseInt(params.id);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr);
     if (isNaN(id)) return error("ID invalide", 400);
 
     const category = await categoryModel.findById(id);
@@ -48,7 +49,8 @@ export const PUT = withAuth(async (request: NextRequest, { params }, auth: JWTPa
       return forbidden("Vous n'avez pas la permission de modifier une catégorie");
     }
 
-    const id = parseInt(params.id);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr);
     if (isNaN(id)) return error("ID invalide", 400);
 
     const body = await request.json();
@@ -75,6 +77,7 @@ export const PUT = withAuth(async (request: NextRequest, { params }, auth: JWTPa
       libelle: data.libelle,
       description: data.description,
       cover_image: data.cover_image,
+      order: data.order,
     };
 
     // Update slug if libelle changed
@@ -109,7 +112,8 @@ export const DELETE = withAuth(async (request: NextRequest, { params }, auth: JW
       return forbidden("Vous n'avez pas la permission de supprimer une catégorie");
     }
 
-    const id = parseInt(params.id);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr);
     if (isNaN(id)) return error("ID invalide", 400);
 
     const existingCategory = await categoryModel.findById(id);

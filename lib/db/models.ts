@@ -1,6 +1,6 @@
 import { createRepository } from "./base-model";
 import prisma from "./prisma";
-import type { User, Role, Permission, LogHistory, UserWithRoles, SafeUser, RoleWithPermissions, Category } from "@/types";
+import type { User, Role, Permission, LogHistory, UserWithRoles, SafeUser, RoleWithPermissions, Category, Car } from "@/types";
 
 // User Repository
 export const userRepository = createRepository<User>("users", [
@@ -41,6 +41,26 @@ export const categoryRepository = createRepository<Category>("categories", [
   "description",
   "slug",
   "cover_image",
+  "order",
+]);
+
+// Car Repository
+export const carRepository = createRepository<Car>("cars", [
+  "id",
+  "title",
+  "sub_title",
+  "description",
+  "slug",
+  "year",
+  "mileage",
+  "equipments",
+  "price",
+  "cover_image",
+  "profile_image",
+  "back_image",
+  "front_image",
+  "interior_image",
+  "category_id",
 ]);
 
 // Extended User Functions
@@ -54,7 +74,7 @@ export const userModel = {
 
   // Get user with roles and permissions
   async findWithRoles(userId: number): Promise<UserWithRoles | null> {
-    const user = await prisma.users.findFirst({
+    const user = await (prisma as any).users.findFirst({
       where: { id: userId, deleted_at: null },
       include: {
         user_roles: {
@@ -114,14 +134,14 @@ export const userModel = {
 
   // Assign roles to user
   async assignRoles(userId: number, roleIds: number[]): Promise<void> {
-    await prisma.$transaction([
+    await (prisma as any).$transaction([
       // Remove existing roles
-      prisma.user_roles.deleteMany({
+      (prisma as any).user_roles.deleteMany({
         where: { user_id: userId }
       }),
       // Assign new roles
       ...(roleIds.length > 0 ? [
-        prisma.user_roles.createMany({
+        (prisma as any).user_roles.createMany({
           data: roleIds.map(roleId => ({
             user_id: userId,
             role_id: roleId
@@ -133,7 +153,7 @@ export const userModel = {
 
   // Set OTP for user
   async setOTP(userId: number, otp: string, expiresAt: Date): Promise<void> {
-    await prisma.users.update({
+    await (prisma as any).users.update({
       where: { id: userId },
       data: {
         otp_code: otp,
@@ -142,9 +162,9 @@ export const userModel = {
     });
   },
 
-  // Clear OTP
-  async clearOTP(userId: number): Promise<void> {
-    await prisma.users.update({
+  // Reset OTP
+  async resetOTP(userId: number): Promise<void> {
+    await (prisma as any).users.update({
       where: { id: userId },
       data: {
         otp_code: null,
@@ -155,7 +175,7 @@ export const userModel = {
 
   // Check if user has permission
   async hasPermission(userId: number, permissionSlug: string): Promise<boolean> {
-    const count = await prisma.permissions.count({
+    const count = await (prisma as any).permissions.count({
       where: {
         slug: permissionSlug,
         deleted_at: null,
@@ -177,7 +197,7 @@ export const userModel = {
 
   // Check if user has role
   async hasRole(userId: number, roleSlug: string): Promise<boolean> {
-    const count = await prisma.roles.count({
+    const count = await (prisma as any).roles.count({
       where: {
         slug: roleSlug,
         deleted_at: null,
@@ -203,7 +223,7 @@ export const roleModel = {
 
   // Get role with permissions
   async findWithPermissions(roleId: number): Promise<RoleWithPermissions | null> {
-    const role = await prisma.roles.findFirst({
+    const role = await (prisma as any).roles.findFirst({
       where: { id: roleId, deleted_at: null },
       include: {
         role_permissions: {
@@ -228,14 +248,14 @@ export const roleModel = {
 
   // Assign permissions to role
   async assignPermissions(roleId: number, permissionIds: number[]): Promise<void> {
-    await prisma.$transaction([
+    await (prisma as any).$transaction([
       // Remove existing permissions
-      prisma.role_permissions.deleteMany({
+      (prisma as any).role_permissions.deleteMany({
         where: { role_id: roleId }
       }),
       // Assign new permissions
       ...(permissionIds.length > 0 ? [
-        prisma.role_permissions.createMany({
+        (prisma as any).role_permissions.createMany({
           data: permissionIds.map(permId => ({
             role_id: roleId,
             permission_id: permId
@@ -268,7 +288,7 @@ export const logModel = {
     userId?: number,
     details?: string
   ): Promise<void> {
-    await prisma.logs_histories.create({
+    await (prisma as any).logs_histories.create({
       data: {
         action,
         model,
@@ -301,7 +321,63 @@ export const categoryModel = {
     if (excludeId) {
       where.id = { not: excludeId };
     }
-    const count = await prisma.categories.count({ where });
+    const count = await (prisma as any).categories.count({ where });
     return count === 0;
   },
+};
+
+// Car Functions
+export const carModel = {
+  ...carRepository,
+
+  async findBySlug(slug: string): Promise<Car | null> {
+    return (prisma as any).cars.findFirst({
+      where: { slug, deleted_at: null },
+      include: { category: true }
+    }) as unknown as Car | null;
+  },
+
+  // Check uniqueness of title
+  async isTitleUnique(title: string, excludeId?: number): Promise<boolean> {
+    const where: any = { title, deleted_at: null };
+    if (excludeId) {
+      where.id = { not: excludeId };
+    }
+    const count = await (prisma as any).cars.count({ where });
+    return count === 0;
+  },
+
+  // Custom search with category include
+  async searchWithCategory(params: any) {
+    const { searchTerm, searchFields, where, page = 1, limit = 10, orderBy = "created_at", order = "desc" } = params;
+    
+    const skip = (page - 1) * limit;
+    
+    const baseWhere: any = { ...where, deleted_at: null };
+    
+    if (searchTerm && searchFields.length > 0) {
+      baseWhere.OR = searchFields.map((field: string) => ({
+        [field]: { contains: searchTerm }
+      }));
+    }
+
+    const [data, total] = await Promise.all([
+      (prisma as any).cars.findMany({
+        where: baseWhere,
+        include: { category: true },
+        skip,
+        take: limit,
+        orderBy: { [orderBy]: order },
+      }),
+      (prisma as any).cars.count({ where: baseWhere }),
+    ]);
+
+    return {
+      data: data as unknown as Car[],
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
 };

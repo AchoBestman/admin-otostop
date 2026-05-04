@@ -4,6 +4,7 @@ export const categorySchema = z.object({
   libelle: z.string().min(2, "Le libellé doit avoir au moins 2 caractères"),
   description: z.string().optional().nullable(),
   cover_image: z.string().optional().nullable(),
+  order: z.coerce.number().default(0),
 });
 
 export const createCategorySchema = categorySchema;

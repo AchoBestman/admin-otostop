@@ -59,6 +59,32 @@ export interface Category extends BaseModel {
   description: string | null;
   slug: string;
   cover_image: string | null;
+  order: number;
+}
+
+export interface Equipment {
+  id: number;
+  title: string;
+  description?: string;
+}
+
+export interface Car extends BaseModel {
+  id: number;
+  title: string;
+  sub_title: string;
+  description: string | null;
+  slug: string;
+  year: number;
+  mileage: number;
+  equipments: Equipment[] | null;
+  price: number;
+  cover_image: string;
+  profile_image: string | null;
+  back_image: string | null;
+  front_image: string | null;
+  interior_image: string | null;
+  category_id: number;
+  category?: Category;
 }
 
 // User-Role junction

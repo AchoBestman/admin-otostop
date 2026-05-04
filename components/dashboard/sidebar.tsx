@@ -13,6 +13,7 @@ import {
   ChevronUp,
   LogOut,
   Layers,
+  Car,
 } from "lucide-react"
 
 import { useAuth } from "@/components/providers/auth-provider"
@@ -59,6 +60,12 @@ const adminNavItems = [
     url: "/dashboard/categories",
     icon: Layers,
     permission: "can_view_categories",
+  },
+  {
+    title: "Véhicules",
+    url: "/dashboard/cars",
+    icon: Car,
+    permission: "can_view_cars",
   },
   {
     title: "Roles",

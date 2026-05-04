@@ -2,14 +2,14 @@
 
 import * as React from "react"
 import useSWR from "swr"
-import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Layers, ImageIcon } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Car as CarIcon, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 
 import { useAuth } from "@/components/providers/auth-provider"
 import { useDataTable } from "@/lib/hooks/use-data-table"
 import { DateRangePicker } from "@/components/date-range-picker"
-import { CategoryDialog } from "@/components/dashboard/categories/category-dialog"
+import { CarDialog } from "@/components/dashboard/cars/car-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -43,11 +43,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import type { Category } from "@/types"
+import type { Car } from "@/types"
 
-interface CategoriesResponse {
+interface CarsResponse {
   success: boolean
-  data: Category[]
+  data: Car[]
   pagination: {
     page: number
     limit: number
@@ -58,29 +58,30 @@ interface CategoriesResponse {
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
-export default function CategoriesPage() {
-  const { hasPermission, isAdmin, isLoading: isAuthLoading } = useAuth()
+export default function CarsPage() {
+  const { hasPermission, isLoading: isAuthLoading } = useAuth()
   const { 
     state, 
     onPageChange, 
     onSortChange, 
     onSearch,
+    onFilterChange,
     onDateRangeChange 
-  } = useDataTable("order", "asc")
+  } = useDataTable("created_at", "desc")
 
-  const [deleteCategoryId, setDeleteCategoryId] = React.useState<number | null>(null)
+  const [deleteCarId, setDeleteCarId] = React.useState<number | null>(null)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const [editingCategory, setEditingCategory] = React.useState<Category | null>(null)
+  const [editingCar, setEditingCar] = React.useState<Car | null>(null)
 
-  const canView = hasPermission("can_view_categories")
-  const canCreate = hasPermission("can_create_categories")
-  const canUpdate = hasPermission("can_update_categories")
-  const canDelete = hasPermission("can_delete_categories")
+  const canView = hasPermission("can_view_cars")
+  const canCreate = hasPermission("can_create_cars")
+  const canUpdate = hasPermission("can_update_cars")
+  const canDelete = hasPermission("can_delete_cars")
 
   if (!isAuthLoading && !canView) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] space-y-4 text-center">
-        <Layers className="h-16 w-16 text-destructive opacity-20" />
+        <CarIcon className="h-16 w-16 text-destructive opacity-20" />
         <h1 className="text-2xl font-bold">Accès refusé</h1>
         <p className="text-muted-foreground max-w-md">
           Vous n'avez pas la permission de consulter cette section.
@@ -97,11 +98,13 @@ export default function CategoriesPage() {
     order: state.order,
   })
   if (state.search) queryParams.set("search", state.search)
+  if (state.year) queryParams.set("year", state.year)
+  if (state.mileage) queryParams.set("mileage", state.mileage)
   if (state.from) queryParams.set("from", state.from)
   if (state.to) queryParams.set("to", state.to)
 
-  const { data, error, isLoading, mutate } = useSWR<CategoriesResponse>(
-    `/api/categories?${queryParams.toString()}`,
+  const { data, error, isLoading, mutate } = useSWR<CarsResponse>(
+    `/api/cars?${queryParams.toString()}`,
     fetcher
   )
 
@@ -115,14 +118,14 @@ export default function CategoriesPage() {
   }
 
   const handleDelete = async () => {
-    if (!deleteCategoryId) return
+    if (!deleteCarId) return
 
     try {
-      const res = await fetch(`/api/categories/${deleteCategoryId}`, { method: "DELETE" })
+      const res = await fetch(`/api/cars/${deleteCarId}`, { method: "DELETE" })
       const result = await res.json()
 
       if (res.ok) {
-        toast.success("Catégorie supprimée")
+        toast.success("Véhicule supprimé")
         mutate()
       } else {
         toast.error("Erreur", { description: result.message })
@@ -130,30 +133,30 @@ export default function CategoriesPage() {
     } catch {
       toast.error("Erreur lors de la suppression")
     } finally {
-      setDeleteCategoryId(null)
+      setDeleteCarId(null)
     }
   }
 
   const openCreateDialog = () => {
-    setEditingCategory(null)
+    setEditingCar(null)
     setIsDialogOpen(true)
   }
 
-  const openEditDialog = (category: Category) => {
-    setEditingCategory(category)
+  const openEditDialog = (car: Car) => {
+    setEditingCar(car)
     setIsDialogOpen(true)
   }
 
-  const categories = data?.data || []
+  const cars = data?.data || []
   const pagination = data?.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Catégories</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Véhicules</h1>
           <p className="text-muted-foreground">
-            Gérez les catégories de véhicules et services
+            Gérez le catalogue des véhicules disponibles
           </p>
         </div>
         {canCreate && (
@@ -166,9 +169,9 @@ export default function CategoriesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Liste des catégories</CardTitle>
+          <CardTitle>Liste des véhicules</CardTitle>
           <CardDescription>
-            {pagination.total} catégorie(s) au total
+            {pagination.total} véhicule(s) au total
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -176,7 +179,7 @@ export default function CategoriesPage() {
             <div className="relative flex-1 w-full md:max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher une catégorie..."
+                placeholder="Rechercher par titre, modèle..."
                 value={state.search}
                 onChange={(e) => onSearch(e.target.value)}
                 className="pl-9"
@@ -188,21 +191,38 @@ export default function CategoriesPage() {
               to={state.to}
               onRangeChange={onDateRangeChange}
             />
+
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <Input
+                type="number"
+                placeholder="Année"
+                className="w-24"
+                value={state.year || ""}
+                onChange={(e) => onFilterChange("year", e.target.value || null)}
+              />
+              <Input
+                type="number"
+                placeholder="Km max"
+                className="w-28"
+                value={state.mileage || ""}
+                onChange={(e) => onFilterChange("mileage", e.target.value || null)}
+              />
+            </div>
           </div>
 
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
+                <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
           ) : error ? (
             <div className="text-center py-8 text-muted-foreground">
-              Erreur lors du chargement des catégories
+              Erreur lors du chargement des véhicules
             </div>
-          ) : categories.length === 0 ? (
+          ) : cars.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Aucune catégorie trouvée
+              Aucun véhicule trouvé
             </div>
           ) : (
             <>
@@ -210,45 +230,53 @@ export default function CategoriesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[80px]">Image</TableHead>
+                      <TableHead className="w-[100px]">Photo</TableHead>
                       <TableHead 
                         className="cursor-pointer hover:text-foreground transition-colors"
-                        onClick={() => handleSort("libelle")}
+                        onClick={() => handleSort("title")}
                       >
                         <div className="flex items-center">
-                          Libellé {renderSortIcon("libelle")}
+                          Véhicule {renderSortIcon("title")}
                         </div>
                       </TableHead>
-                      <TableHead>Slug</TableHead>
+                      <TableHead>Catégorie</TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:text-foreground transition-colors text-center"
+                        onClick={() => handleSort("year")}
+                      >
+                        <div className="flex items-center justify-center">
+                          Année {renderSortIcon("year")}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-center">Kilométrage</TableHead>
                       <TableHead 
                         className="cursor-pointer hover:text-foreground transition-colors"
                         onClick={() => handleSort("created_at")}
                       >
-                        <div className="flex items-center">
-                          Date {renderSortIcon("created_at")}
+                        <div className="flex items-center justify-center">
+                          Ajouté le {renderSortIcon("created_at")}
                         </div>
                       </TableHead>
-                      <TableHead>Description</TableHead>
                       <TableHead 
-                        className="cursor-pointer hover:text-foreground transition-colors text-center"
-                        onClick={() => handleSort("order")}
+                        className="cursor-pointer hover:text-foreground transition-colors text-right"
+                        onClick={() => handleSort("price")}
                       >
-                        <div className="flex items-center justify-center">
-                          Ordre {renderSortIcon("order")}
+                        <div className="flex items-center justify-end">
+                          Prix {renderSortIcon("price")}
                         </div>
                       </TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {categories.map((category) => (
-                      <TableRow key={category.id}>
+                    {cars.map((car) => (
+                      <TableRow key={car.id}>
                         <TableCell>
-                          <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted flex items-center justify-center border border-border/50">
-                            {category.cover_image ? (
+                          <div className="relative h-12 w-20 rounded-md overflow-hidden bg-muted flex items-center justify-center border border-border/50">
+                            {car.cover_image ? (
                               <Image 
-                                src={category.cover_image} 
-                                alt={category.libelle} 
+                                src={car.cover_image} 
+                                alt={car.title} 
                                 fill 
                                 className="object-cover"
                               />
@@ -257,22 +285,24 @@ export default function CategoriesPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">{category.libelle}</TableCell>
                         <TableCell>
-                          <code className="px-2 py-1 bg-muted rounded text-xs text-muted-foreground border border-border/50">
-                            {category.slug}
-                          </code>
+                          <div className="flex flex-col">
+                            <span className="font-semibold">{car.title}</span>
+                            <span className="text-xs text-muted-foreground">{car.sub_title}</span>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {category.created_at ? format(new Date(category.created_at), "dd/MM/yyyy", { locale: fr }) : "-"}
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10">
+                            {car.category?.libelle || "—"}
+                          </Badge>
                         </TableCell>
-                        <TableCell className="max-w-xs">
-                          <p className="truncate text-muted-foreground text-sm">
-                            {category.description || "—"}
-                          </p>
+                        <TableCell className="text-center">{car.year}</TableCell>
+                        <TableCell className="text-center">{car.mileage?.toLocaleString()} km</TableCell>
+                        <TableCell className="text-center text-sm text-muted-foreground">
+                          {car.created_at ? format(new Date(car.created_at), "dd/MM/yyyy", { locale: fr }) : "-"}
                         </TableCell>
-                        <TableCell className="text-center font-medium">
-                          <Badge variant="outline">{category.order}</Badge>
+                        <TableCell className="text-right font-bold text-primary">
+                          {car.price?.toLocaleString()} FCFA
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -286,7 +316,7 @@ export default function CategoriesPage() {
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               {canUpdate && (
-                                <DropdownMenuItem onClick={() => openEditDialog(category)}>
+                                <DropdownMenuItem onClick={() => openEditDialog(car)}>
                                   <Pencil className="mr-2 h-4 w-4" />
                                   Modifier
                                 </DropdownMenuItem>
@@ -296,7 +326,7 @@ export default function CategoriesPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
-                                    onClick={() => setDeleteCategoryId(category.id)}
+                                    onClick={() => setDeleteCarId(car.id)}
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Supprimer
@@ -344,12 +374,12 @@ export default function CategoriesPage() {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteCategoryId} onOpenChange={() => setDeleteCategoryId(null)}>
+      <AlertDialog open={!!deleteCarId} onOpenChange={() => setDeleteCarId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              {"Êtes-vous sûr de vouloir supprimer cette catégorie ? Cette action est irréversible."}
+              {"Êtes-vous sûr de vouloir supprimer ce véhicule ? Cette action est irréversible."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -364,10 +394,10 @@ export default function CategoriesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <CategoryDialog 
+      <CarDialog 
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        category={editingCategory}
+        car={editingCar}
         onSuccess={() => mutate()}
       />
     </div>

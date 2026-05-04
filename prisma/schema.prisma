@@ -100,10 +100,40 @@ model categories {
   description String?  @db.Text
   slug        String   @unique
   cover_image String?
+  order       Int      @default(0)
   created_at  DateTime @default(now())
   updated_at  DateTime?
   deleted_at  DateTime?
   created_by  Int?
   updated_by  Int?
   deleted_by  Int?
+  
+  cars        cars[]
+}
+
+model cars {
+  id              Int      @id @default(autoincrement())
+  title           String   @unique
+  sub_title       String
+  description     String?  @db.Text
+  slug            String   @unique
+  year            Int
+  mileage         Int
+  equipments      Json?    // Stored as [{id, title, description}]
+  price           Float
+  cover_image     String
+  profile_image   String?
+  back_image      String?
+  front_image     String?
+  interior_image  String?
+  category_id     Int
+  
+  category        categories @relation(fields: [category_id], references: [id])
+  
+  created_at      DateTime @default(now())
+  updated_at      DateTime?
+  deleted_at      DateTime?
+  created_by      Int?
+  updated_by      Int?
+  deleted_by      Int?
 }

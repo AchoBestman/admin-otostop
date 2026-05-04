@@ -1,15 +1,15 @@
 export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { withAuth, hasPermission } from "@/lib/auth/middleware";
-import { categoryModel, logModel } from "@/lib/db/models";
-import { createCategorySchema } from "@/lib/validators/category";
+import { carModel, logModel } from "@/lib/db/models";
+import { createCarSchema } from "@/lib/validators/car";
 import { parseQueryParams, buildPrismaWhere } from "@/lib/utils/query";
 import { paginated, success, error, validationError, forbidden, rateLimitError } from "@/lib/utils/response";
 import { slugify } from "@/lib/utils/string";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limiting";
-import type { JWTPayload, Category } from "@/types";
+import type { JWTPayload, Car } from "@/types";
 
-// GET categories list
+// GET cars list
 export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayload) => {
   try {
     const ip = getClientIP(request);
@@ -18,21 +18,21 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
       return rateLimitError(rl.resetAt);
     }
 
-    if (!hasPermission(auth, "can_view_categories")) {
-      return forbidden("Vous n'avez pas la permission de consulter les catégories");
+    if (!hasPermission(auth, "can_view_cars")) {
+      return forbidden("Vous n'avez pas la permission de consulter les véhicules");
     }
 
     const params = parseQueryParams(request);
     const where = buildPrismaWhere(params);
 
-    const result = await categoryModel.search({
-      searchFields: ["libelle", "slug", "description"],
+    const result = await carModel.searchWithCategory({
+      searchFields: ["title", "sub_title", "description", "slug"],
       searchTerm: params.search,
       where,
       page: params.page,
       limit: params.limit,
-      orderBy: params.sortBy || "order",
-      order: params.order || "asc",
+      orderBy: params.sortBy || "created_at",
+      order: params.order,
     });
 
     return paginated(result.data, {
@@ -43,12 +43,12 @@ export const GET = withAuth(async (request: NextRequest, _context, auth: JWTPayl
     });
 
   } catch (err: unknown) {
-    console.error("Categories list error:", err);
-    return error("Failed to fetch categories", 500);
+    console.error("Cars list error:", err);
+    return error("Failed to fetch vehicles", 500);
   }
 });
 
-// POST create new category
+// POST create new car
 export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPayload) => {
   try {
     const ip = getClientIP(request);
@@ -57,13 +57,13 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
       return rateLimitError(rl.resetAt);
     }
 
-    if (!hasPermission(auth, "can_create_categories")) {
-      return forbidden("Vous n'avez pas la permission de créer une catégorie");
+    if (!hasPermission(auth, "can_create_cars")) {
+      return forbidden("Vous n'avez pas la permission de créer un véhicule");
     }
 
     const body = await request.json();
     
-    const validation = createCategorySchema.safeParse(body);
+    const validation = createCarSchema.safeParse(body);
     if (!validation.success) {
       const errors = validation.error.flatten().fieldErrors as Record<string, string[]>;
       return validationError(errors);
@@ -71,32 +71,41 @@ export const POST = withAuth(async (request: NextRequest, _context, auth: JWTPay
 
     const data = validation.data;
 
-    // Check uniqueness of libelle
-    const isUnique = await categoryModel.isLibelleUnique(data.libelle);
+    // Check uniqueness of title
+    const isUnique = await carModel.isTitleUnique(data.title);
     if (!isUnique) {
-      return error("Une catégorie avec ce libellé existe déjà", 409);
+      return error("Un véhicule avec ce titre existe déjà", 409);
     }
 
     // Generate slug
-    const slug = slugify(data.libelle);
+    const slug = slugify(data.title);
 
-    // Create category
-    const categoryId = await categoryModel.create({
-      libelle: data.libelle,
+    // Create car
+    const carId = await carModel.create({
+      title: data.title,
+      sub_title: data.sub_title,
       description: data.description,
       slug,
+      year: data.year,
+      mileage: data.mileage,
+      equipments: data.equipments,
+      price: data.price,
       cover_image: data.cover_image,
-      order: data.order,
-    } as Partial<Category>, auth.userId);
+      profile_image: data.profile_image,
+      back_image: data.back_image,
+      front_image: data.front_image,
+      interior_image: data.interior_image,
+      category_id: data.category_id,
+    } as any, auth.userId);
 
     // Log the action
-    await logModel.log("create", "categories", categoryId, auth.userId, `Category ${data.libelle} created`);
+    await logModel.log("create", "cars", carId, auth.userId, `Vehicle ${data.title} created`);
 
-    const category = await categoryModel.findById(categoryId);
-    return success(category, "Catégorie créée avec succès");
+    const car = await carModel.findById(carId);
+    return success(car, "Véhicule créé avec succès");
 
   } catch (err: unknown) {
-    console.error("Create category error:", err);
-    return error("Failed to create category", 500);
+    console.error("Create car error:", err);
+    return error("Failed to create vehicle", 500);
   }
 });
